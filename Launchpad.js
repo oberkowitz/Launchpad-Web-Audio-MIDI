@@ -107,5 +107,3 @@ Launchpad.prototype.findElemByRowCol = function(row, col) {
 	}
 	return null;
 }
-
-
