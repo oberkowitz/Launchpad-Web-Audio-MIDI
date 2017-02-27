@@ -4,7 +4,7 @@ function AudioPhaser(Tone, launchpad) {
 	this.launchpad = launchpad;
 	this.defaultPeriod = 60;
 
-	this.baseTimesPerPeriod = 60;
+	this.baseTimesPerPeriod = 10;
 
 	this.baseFrequency = 55;
 	this.baseNote = "A1";
@@ -23,39 +23,17 @@ AudioPhaser.prototype.getFrequency = function(baseFreq, numSemitones) {
 }
 
 AudioPhaser.prototype.start = function() {
-	// for (var i=0; i<this.numRows; i++) {
-	// 	for (var j=0; j<this.numCols; j++) {
-	// 		var that = this;
-	// 		var osc = that.keys[i][j];
-	// 		var ms = osc.period / osc.timesPerPeriod;
-	// 		setInterval(function(row, col, freq){
-	// 			// that.keys[row][col].vco.oscillator.frequency.value = freq;
-	// 			console.log(that.keys[row][col].vco.oscillator.frequency.value);
-	// that.keys[row][col].envelope.trigger();
-	// that.launchpad.light(row, col, that.launchpad.green);
-	// setTimeout(function() {
-	// 	that.launchpad.light(row, col, that.launchpad.off);
-	// }, 100);
-	// 		}, ms, i, j, osc.vco.oscillator.frequency.value);
-	// 	}
-	// }
 	this.stop();
 	semitone = 0;
 	for (var i = 0; i < this.numRows; i++) {
 		for (var j = 0; j < this.numCols; j++) {
-			// this.keys[i][j] = new PeriodicOscillator(
-			// 	this.defaultPeriod, 
-			// 	this.baseTimesPerPeriod + semitone,
-			// 	this.getFrequency(this.baseFrequency, semitone),
-			// 	audioCtx);
-
 			var synth = new Tone.Synth().toMaster();
 			synth.envelope.release.value = .1;
 			this.keys[i][j] = synth;
-			var len = this.defaultPeriod / (this.baseTimesPerPeriod + semitone);
+			var freq = (semitone + this.baseTimesPerPeriod) / this.defaultPeriod + "hz";
 			var note = this.getFrequency(this.baseFrequency, semitone);
-			console.log(this.getFrequency(this.baseFrequency, semitone));
-			this.scheduleRepeat(synth, note, i, j, this.launchpad, 60, len);
+			console.log(note, freq);
+			this.scheduleRepeat(synth, note, i, j, this.launchpad, 100, freq, .03);
 			semitone += 1;
 		}
 	}
@@ -64,31 +42,20 @@ AudioPhaser.prototype.start = function() {
 }
 
 // Do this as a method to avoid pass by reference issues
-AudioPhaser.prototype.scheduleRepeat = function(synth, note, i, j, launchpad, offDelay, len) {
+AudioPhaser.prototype.scheduleRepeat = function(synth, note, i, j, launchpad, offDelay, freq, release) {
 	Tone.Transport.scheduleRepeat(function(time) {
-		synth.triggerAttack(note);
+		synth.triggerAttackRelease(note, release);
 		launchpad.light(i, j, launchpad.green);
 		// Turn the LED off in offDelay milliseconds
 		setTimeout(function() {
 			launchpad.light(i, j, launchpad.off);
 			synth.triggerRelease();
 		}, offDelay);
-	}, len);
+	}, freq);
 }
 
 AudioPhaser.prototype.stop = function() {
-	// for (var i=0; i<this.numRows; i++) {
-	// 	for (var j=0; j<this.numCols; j++) {
-	// 		setInterval(function(){
-	// 			this.keys[i][j].envelope.trigger();
-	// 			this.launchpad.light(i, j, this.launchpad.green);
-	// 			setTimeout(function() {
-	// 				this.launchpad.light(i, j, this.launchpad.off);
-	// 			}, 20);
-	// 		}, this.period / this.timesPerPeriod);
-	// 	}
-	// }
-		Tone.Transport.cancel();
+	Tone.Transport.cancel();
 
 	Tone.Transport.stop();
 
