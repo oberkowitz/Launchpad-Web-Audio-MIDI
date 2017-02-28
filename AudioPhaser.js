@@ -29,6 +29,7 @@ AudioPhaser.prototype.start = function() {
 		for (var j = 0; j < this.numCols; j++) {
 			var synth = new Tone.Synth().toMaster();
 			synth.envelope.release.value = .1;
+			synth.oscillator.mute = true;
 			this.keys[i][j] = synth;
 			var freq = (semitone + this.baseTimesPerPeriod) / this.defaultPeriod + "hz";
 			var note = this.getFrequency(this.baseFrequency, semitone);
@@ -46,13 +47,18 @@ AudioPhaser.prototype.scheduleRepeat = function(synth, note, i, j, launchpad, of
 	Tone.Transport.scheduleRepeat(function(time) {
 		synth.triggerAttackRelease(note, release);
 		Tone.Draw.schedule(function() {
-			launchpad.light(i, j, launchpad.green);
+			if (!synth.oscillator.mute) {
+				launchpad.light(i, j, launchpad.green);
+			}
 		}, Tone.context.currentTime);
 
 		// Turn the LED off in offDelay milliseconds
 		Tone.Draw.schedule(function() {
-			console.log("off");
-			launchpad.light(i, j, launchpad.off);
+			if (synth.oscillator.mute) {
+				launchpad.light(i, j, launchpad.off);
+			} else {
+				launchpad.light(i, j, launchpad.light_green);
+			}
 		}, Tone.context.currentTime + offDelay / 1000);
 	}, freq);
 }
@@ -75,10 +81,20 @@ AudioPhaser.prototype.handleMidiMessage = function(ev) {
 		// note off
 		//noteOff(b);
 	} else if (cmd == 0x90) { // Note on
-		if (noteNumber % 8 == 0) {
+		if (noteNumber % 16 == 8) {
 			// These are the side column buttons
-			
 			this.start();
+		} else {
+			var row = Math.floor(noteNumber / 16);
+			var col = noteNumber % 16;
+			var wasMuted = this.keys[row][col].oscillator.mute;
+			this.keys[row][col].oscillator.mute = !wasMuted;
+
+			if (wasMuted) {
+				this.launchpad.light(row, col, this.launchpad.light_green);
+			} else {
+				this.launchpad.light(row, col, this.launchpad.off);
+			}
 
 		}
 

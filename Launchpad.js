@@ -29,6 +29,7 @@ function Launchpad(numRows, numCols) {
 Launchpad.prototype.off = 0x00;
 
 Launchpad.prototype.green = 0x3C;
+Launchpad.prototype.light_green = 0x1C;
 
 Launchpad.prototype.red = 0x0f
 
@@ -76,6 +77,9 @@ Launchpad.prototype.light = function(row, col, color) {
 	switch (color) {
 		case this.green:
 			el.classList.add("green");
+			break;
+		case this.light_green:
+			el.classList.add("light-green");
 			break;
 		case this.red:
 			el.classList.add("red");
