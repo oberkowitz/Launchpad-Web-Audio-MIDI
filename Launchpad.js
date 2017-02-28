@@ -38,13 +38,6 @@ Launchpad.prototype.openingAnimation = async function(cb) {
 	for (var i=0; i<this.numRows; i++) {
 		for (var j=0; j<this.numCols; j++) {
 			var key = i*16 + j;
-			this.light(i,j, 0x3C);
-  			await new Promise(resolve => setTimeout(resolve, 30));
-		}
-	}
-	for (var i=0; i<this.numRows; i++) {
-		for (var j=0; j<this.numCols; j++) {
-			var key = i*16 + j;
 			this.light(i,j, this.red);
 		}
 	}

@@ -33,7 +33,7 @@ AudioPhaser.prototype.start = function() {
 			var freq = (semitone + this.baseTimesPerPeriod) / this.defaultPeriod + "hz";
 			var note = this.getFrequency(this.baseFrequency, semitone);
 			console.log(note, freq);
-			this.scheduleRepeat(synth, note, i, j, this.launchpad, 100, freq, .03);
+			this.scheduleRepeat(synth, note, i, j, this.launchpad, 100.0, freq, 40.0 / 1000); // triggerAttackRelease takes seconds
 			semitone += 1;
 		}
 	}
@@ -45,12 +45,15 @@ AudioPhaser.prototype.start = function() {
 AudioPhaser.prototype.scheduleRepeat = function(synth, note, i, j, launchpad, offDelay, freq, release) {
 	Tone.Transport.scheduleRepeat(function(time) {
 		synth.triggerAttackRelease(note, release);
-		launchpad.light(i, j, launchpad.green);
+		Tone.Draw.schedule(function() {
+			launchpad.light(i, j, launchpad.green);
+		}, Tone.context.currentTime);
+
 		// Turn the LED off in offDelay milliseconds
-		setTimeout(function() {
+		Tone.Draw.schedule(function() {
+			console.log("off");
 			launchpad.light(i, j, launchpad.off);
-			synth.triggerRelease();
-		}, offDelay);
+		}, Tone.context.currentTime + offDelay / 1000);
 	}, freq);
 }
 
