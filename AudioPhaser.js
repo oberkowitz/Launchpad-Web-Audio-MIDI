@@ -3,6 +3,7 @@ function AudioPhaser(Tone, launchpad) {
 	this.numCols = launchpad.numCols;
 	this.launchpad = launchpad;
 	this.defaultPeriod = 60;
+	this.heldKeys = [];
 
 	this.baseTimesPerPeriod = 10;
 
@@ -31,10 +32,9 @@ AudioPhaser.prototype.start = function() {
 			synth.envelope.release.value = .1;
 			synth.oscillator.mute = true;
 			this.keys[i][j] = synth;
-			var freq = (semitone + this.baseTimesPerPeriod) / this.defaultPeriod + "hz";
+			synth.repsPerSecond = semitone + this.baseTimesPerPeriod;
 			var note = this.getFrequency(this.baseFrequency, semitone);
-			console.log(note, freq);
-			this.scheduleRepeat(synth, note, i, j, this.launchpad, 100.0, freq, 40.0 / 1000); // triggerAttackRelease takes seconds
+			synth.pitch = note;
 			semitone += 1;
 		}
 	}
@@ -43,9 +43,9 @@ AudioPhaser.prototype.start = function() {
 }
 
 // Do this as a method to avoid pass by reference issues
-AudioPhaser.prototype.scheduleRepeat = function(synth, note, i, j, launchpad, offDelay, freq, release) {
-	Tone.Transport.scheduleRepeat(function(time) {
-		synth.triggerAttackRelease(note, release);
+AudioPhaser.prototype.scheduleRepeat = function(synth, i, j, launchpad, offDelay=.1, release=0.04) {
+	synth.timerId = Tone.Transport.scheduleRepeat(function(time) {
+		synth.triggerAttackRelease(synth.pitch, release);
 		Tone.Draw.schedule(function() {
 			if (!synth.oscillator.mute) {
 				launchpad.light(i, j, launchpad.green);
@@ -59,15 +59,15 @@ AudioPhaser.prototype.scheduleRepeat = function(synth, note, i, j, launchpad, of
 			} else {
 				launchpad.light(i, j, launchpad.light_green);
 			}
-		}, Tone.context.currentTime + offDelay / 1000);
-	}, freq);
+		}, Tone.context.currentTime + offDelay);
+	}, synth.repsPerSecond / 60.0 + "hz");
+	return synth.timerId;
 }
 
 AudioPhaser.prototype.stop = function() {
 	Tone.Transport.cancel();
 
-	Tone.Transport.stop();
-
+	Tone.Transport.pause();
 }
 
 AudioPhaser.prototype.handleMidiMessage = function(ev) {
@@ -76,36 +76,55 @@ AudioPhaser.prototype.handleMidiMessage = function(ev) {
 	var channel = data[0] & 0xf;
 	var noteNumber = data[1];
 	var velocity = data[2];
+	var row = Math.floor(noteNumber / 16);
+	var col = noteNumber % 16;
+
 
 	if (cmd == 0x80 || ((cmd == 0x90) && (velocity == 0))) { // with MIDI, note on with velocity zero is the same as note off
 		// note off
 		//noteOff(b);
+		this.heldKeys.splice(this.heldKeys.indexOf(noteNumber), 1);
 	} else if (cmd == 0x90) { // Note on
+		this.heldKeys.push(noteNumber);
+
 		if (noteNumber % 16 == 8) {
 			// These are the side column buttons
 			this.start();
 		} else {
-			var row = Math.floor(noteNumber / 16);
-			var col = noteNumber % 16;
-			var wasMuted = this.keys[row][col].oscillator.mute;
-			this.keys[row][col].oscillator.mute = !wasMuted;
+			var synth = this.keys[row][col]
+			synth.oscillator.mute = !synth.oscillator.mute;
+			var isMuted = synth.oscillator.mute;
 
-			if (wasMuted) {
+			if (!isMuted) {
 				this.launchpad.light(row, col, this.launchpad.light_green);
+				console.log("starting " + this.scheduleRepeat(synth, row, col, this.launchpad)); // triggerAttackRelease takes seconds
+
 			} else {
 				this.launchpad.light(row, col, this.launchpad.off);
+				console.log("clearing " + synth.timerId);
+				Tone.Transport.clear(synth.timerId);
 			}
 
 		}
 
 	} else if (cmd == 0xB0) { // Continuous Controller message
 		// Range of the top buttons is 0x68 to 0x6F
-		this.stop();
-		console.log(ev);
 		switch (noteNumber) {
 			case 0x68: // up button
+				for (var ind = 0; ind < this.heldKeys.length; ind++) {
+					var row = Math.floor(this.heldKeys[ind] / 16);
+					var col = this.heldKeys[ind] % 16;
+					var synth = this.keys[row][col]
+					synth.repsPerSecond += 1;
+				}
 				break;
 			case 0x69: // down button
+				for (var ind = 0; ind < this.heldKeys.length; ind++) {
+					var row = Math.floor(this.heldKeys[ind] / 16);
+					var col = this.heldKeys[ind] % 16;
+					var synth = this.keys[row][col]
+					synth.repsPerSecond -= 1;
+				}
 				break;
 			case 0x6A: // left button
 				break;
