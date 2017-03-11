@@ -30,11 +30,12 @@ AudioPhaser.prototype.start = function() {
 		for (var j = 0; j < this.numCols; j++) {
 			var synth = new Tone.Synth().toMaster();
 			synth.envelope.release.value = .1;
-			synth.oscillator.mute = true;
+			synth.oscillator.mute = false;
 			this.keys[i][j] = synth;
 			synth.repsPerSecond = semitone + this.baseTimesPerPeriod;
 			var note = this.getFrequency(this.baseFrequency, semitone);
 			synth.pitch = note;
+			this.scheduleRepeat(synth, i, j, this.launchpad)
 			semitone += 1;
 		}
 	}
@@ -46,12 +47,11 @@ AudioPhaser.prototype.start = function() {
 AudioPhaser.prototype.scheduleRepeat = function(synth, i, j, launchpad, offDelay=.1, release=0.04) {
 	synth.timerId = Tone.Transport.scheduleRepeat(function(time) {
 		synth.triggerAttackRelease(synth.pitch, release);
-		Tone.Draw.schedule(function() {
-			if (!synth.oscillator.mute) {
-				launchpad.light(i, j, launchpad.green);
-			}
-		}, Tone.context.currentTime);
-
+		// Don't use Tone.Draw to turn on the light, it looks way better on time and doesn't take much processing
+		if (!synth.oscillator.mute) {
+			launchpad.light(i, j, launchpad.green);
+		}
+		
 		// Turn the LED off in offDelay milliseconds
 		Tone.Draw.schedule(function() {
 			if (synth.oscillator.mute) {
@@ -154,3 +154,6 @@ AudioPhaser.prototype.handleMidiMessage = function(ev) {
 // 	this.envelope.connect(this.vca.amplitude);
 // 	this.vca.connect(context.destination);
 // }
+
+
+

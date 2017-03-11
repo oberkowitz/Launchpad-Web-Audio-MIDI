@@ -86,3 +86,8 @@ window.addEventListener('load', function() {
 	audioPhaser = new AudioPhaser(Tone, launchpad);
 	navigator.requestMIDIAccess({}).then(onMIDIInit, onMIDIFail);
 });
+
+
+
+
+
