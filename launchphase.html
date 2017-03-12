@@ -20,6 +20,7 @@
 		table.launchpad tr td{background-color:#888; border-radius:5px; background:radial-gradient(ellipse at center, #888 12%,#777 99%);}
 
 		table.launchpad tr td.green{color:#666; background: #00aa00; background:radial-gradient(ellipse at center, #77cc33 12%,#669933 99%);}
+		table.launchpad tr td.light-green{color:#666; opacity: 0.3; background: #00aa00; background:radial-gradient(ellipse at center, #77cc33 12%,#669933 99%);}
 		table.launchpad tr td.red{color:#666; background: #ff4444; background:radial-gradient(ellipse at center, #ff4444 12%,#bb3333 99%);}
 		table.launchpad tr td.amber{color:#666; background: #ffA544; background:radial-gradient(ellipse at center, #ffA544 12%,#aa7744 99%);}
 
@@ -55,6 +56,9 @@
 		<select id=midiOut onchange='changeMidiOut();'>
 			<option value="">Not connected</option>
 		</select>
+		<button id="startButton" disabled="true" onclick="startLaunchphase()">
+			Start phaser with selected input
+		</button>
 	</p>
 
 	<div id="main">

@@ -49,15 +49,15 @@ AudioPhaser.prototype.scheduleRepeat = function(synth, i, j, launchpad, offDelay
 		synth.triggerAttackRelease(synth.pitch, release);
 		// Don't use Tone.Draw to turn on the light, it looks way better on time and doesn't take much processing
 		if (!synth.oscillator.mute) {
-			launchpad.light(i, j, launchpad.green);
+			launchpad.light(i, j, launchpad.GREEN);
 		}
-		
+
 		// Turn the LED off in offDelay milliseconds
 		Tone.Draw.schedule(function() {
 			if (synth.oscillator.mute) {
-				launchpad.light(i, j, launchpad.off);
+				launchpad.light(i, j, launchpad.OFF);
 			} else {
-				launchpad.light(i, j, launchpad.light_green);
+				launchpad.light(i, j, launchpad.LIGHT_GREEN);
 			}
 		}, Tone.context.currentTime + offDelay);
 	}, synth.repsPerSecond / 60.0 + "hz");
@@ -71,7 +71,7 @@ AudioPhaser.prototype.stop = function() {
 }
 
 AudioPhaser.prototype.handleMidiMessage = function(ev) {
-	data = event.data;
+	data = ev.data;
 	var cmd = data[0];
 	var channel = data[0] & 0xf;
 	var noteNumber = data[1];
@@ -96,11 +96,11 @@ AudioPhaser.prototype.handleMidiMessage = function(ev) {
 			var isMuted = synth.oscillator.mute;
 
 			if (!isMuted) {
-				this.launchpad.light(row, col, this.launchpad.light_green);
+				this.launchpad.light(row, col, this.launchpad.LIGHT_GREEN);
 				console.log("starting " + this.scheduleRepeat(synth, row, col, this.launchpad)); // triggerAttackRelease takes seconds
 
 			} else {
-				this.launchpad.light(row, col, this.launchpad.off);
+				this.launchpad.light(row, col, this.launchpad.OFF);
 				console.log("clearing " + synth.timerId);
 				Tone.Transport.clear(synth.timerId);
 			}
@@ -141,19 +141,3 @@ AudioPhaser.prototype.handleMidiMessage = function(ev) {
 		}
 	}
 }
-
-
-// function PeriodicOscillator(period, timesPerPeriod, frequency, audioCtx) {
-// 	this.period = period;
-// 	this.timesPerPeriod = timesPerPeriod;
-// 	this.vco = new VCO(audioCtx, frequency);
-// 	this.vca = new VCA(audioCtx);
-// 	this.envelope = new EnvelopeGenerator(audioCtx);
-
-// 	this.vco.connect(this.vca);
-// 	this.envelope.connect(this.vca.amplitude);
-// 	this.vca.connect(context.destination);
-// }
-
-
-

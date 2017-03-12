@@ -1,92 +1,116 @@
-
-function Launchpad(numRows, numCols) {
+function Launchpad(numRows, numCols, launchpadFound) {
+	this.launchpadFound = launchpadFound;
 	this.numRows = numRows;
 	this.numCols = numCols;
 	this.htmlLaunchpad = document.createElement("table");
-	this.htmlLaunchpad.className="launchpad";
+	this.htmlLaunchpad.className = "launchpad";
 
 	this.pad = new Array(numRows);
-	for (var i=0; i< this.numRows; i++) {
+	for (var i = 0; i < this.numRows; i++) {
 		this.pad[i] = new Array(this.numCols);
 	}
-
-	for (var i=0; i<this.numRows; i++) {
-		var rowElem = document.createElement("tr");
-		rowElem.className = "row";
-		rowElem.row = i;
-		for (var j=0; j<this.numCols; j++) {
-			var button = document.createElement("td");
-			button.row = i;
-			button.col = j;
-			// button.onclick = flipHandler;
-			rowElem.appendChild(button);
+	if (!launchpadFound) {
+		for (var i = 0; i < this.numRows; i++) {
+			var rowElem = document.createElement("tr");
+			rowElem.className = "row";
+			rowElem.row = i;
+			for (var j = 0; j < this.numCols; j++) {
+				var button = document.createElement("td");
+				button.row = i;
+				button.col = j;
+				button.onmousedown = this.handlePress(i, j);
+				button.onmouseup = this.handleRelease(i, j);
+				rowElem.appendChild(button);
+			}
+			this.htmlLaunchpad.appendChild(rowElem);
 		}
-		this.htmlLaunchpad.appendChild(rowElem);
+		document.getElementById("main").appendChild(this.htmlLaunchpad)
 	}
-	document.getElementById("main").appendChild(this.htmlLaunchpad)
 }
 
-Launchpad.prototype.off = 0x00;
+Launchpad.prototype.OFF = 0x00;
 
-Launchpad.prototype.green = 0x3C;
-Launchpad.prototype.light_green = 0x1C;
+Launchpad.prototype.GREEN = 0x3C;
 
-Launchpad.prototype.red = 0x0f
+Launchpad.prototype.LIGHT_GREEN = 0x1C;
 
-Launchpad.prototype.amber = 0x3F;
+Launchpad.prototype.RED = 0x0f
+
+Launchpad.prototype.AMBER = 0x3F;
 
 Launchpad.prototype.openingAnimation = async function(cb) {
-	for (var i=0; i<this.numRows; i++) {
-		for (var j=0; j<this.numCols; j++) {
-			var key = i*16 + j;
-			this.light(i,j, this.red);
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
+			var key = i * 16 + j;
+			this.light(i, j, this.RED);
 		}
 	}
 	await new Promise(resolve => setTimeout(resolve, 400));
 
-	for (var i=0; i<this.numRows; i++) {
-		for (var j=0; j<this.numCols; j++) {
-			var key = i*16 + j;
-			this.light(i,j, this.green);
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
+			var key = i * 16 + j;
+			this.light(i, j, this.GREEN);
 		}
 	}
 	await new Promise(resolve => setTimeout(resolve, 400));
 
-	for (var i=0; i<this.numRows; i++) {
-		for (var j=0; j<this.numCols; j++) {
-			var key = i*16 + j;
-			this.light(i,j, this.amber);
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
+			var key = i * 16 + j;
+			this.light(i, j, this.AMBER);
 		}
 	}
 	await new Promise(resolve => setTimeout(resolve, 400));
 
-	for (var i=0; i<this.numRows; i++) {
-		for (var j=0; j<this.numCols; j++) {
-			var key = i*16 + j;
-			this.light(i,j, this.off);
+	for (var i = 0; i < this.numRows; i++) {
+		for (var j = 0; j < this.numCols; j++) {
+			var key = i * 16 + j;
+			this.light(i, j, this.OFF);
 		}
 	}
 	if (cb) cb();
 }
 
 Launchpad.prototype.light = function(row, col, color) {
-	var key = row*16 + col;
-	midiOut.send( [0x90, key, color]);
-	var el = this.findElemByRowCol(row, col)
-	el.className = "";
-	switch (color) {
-		case this.green:
-			el.classList.add("green");
-			break;
-		case this.light_green:
-			el.classList.add("light-green");
-			break;
-		case this.red:
-			el.classList.add("red");
-			break;	
-		case this.amber:
-			el.classList.add("amber");
-			break;
+	var key = row * 16 + col;
+	if (launchpadFound) {
+		midiOut.send([0x90, key, color]);
+	} else {
+		var el = this.findElemByRowCol(row, col)
+		el.className = "";
+		switch (color) {
+			case this.GREEN:
+				el.classList.add("green");
+				break;
+			case this.LIGHT_GREEN:
+				el.classList.add("light-green");
+				break;
+			case this.RED:
+				el.classList.add("red");
+				break;
+			case this.AMBER:
+				el.classList.add("amber");
+				break;
+		}
+	}
+}
+
+Launchpad.prototype.handlePress = function(row, col) {
+	return function() {
+		var key = row * 16 + col;
+		midiIn.onmidimessage({
+			"data": [0x90, key, 100]
+		});
+	}
+}
+
+Launchpad.prototype.handleRelease = function(row, col) {
+	return function() {
+		var key = row * 16 + col;
+		midiIn.onmidimessage({
+			"data": [0x90, key, 0]
+		});
 	}
 }
 
@@ -104,5 +128,3 @@ Launchpad.prototype.findElemByRowCol = function(row, col) {
 	}
 	return null;
 }
-
-
